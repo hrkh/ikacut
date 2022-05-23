@@ -17,6 +17,7 @@ def download_from_youtube(source_url: str, output_dir: str, filename: str) -> No
         if result != 0:
             raise YouTubeDownloadError("Failed to download the video file")
 
+
 def add_command(group: click.Group) -> None:
     @group.command("download")
     @click.argument("source_url", type=str)
