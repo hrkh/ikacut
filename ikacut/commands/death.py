@@ -9,7 +9,6 @@ import click
 import cv2
 from pendulum.duration import Duration
 
-from ikacut.exceptions import ReadImageError
 from ikacut.services.caputure import IkaCaptureProcessor
 
 
@@ -28,7 +27,7 @@ class DeathExtractor(IkaCaptureProcessor):
         self.threshold = threshold
 
     def extract(self):
-        death_image = self.read_image("./images/death.png")
+        death_image = self.read_image("./images/respawn.png")
 
         dt = datetime.now().isoformat()
         os.makedirs(f"./data/{dt}", exist_ok=True)
@@ -38,16 +37,15 @@ class DeathExtractor(IkaCaptureProcessor):
             target_msec = i * 1000 * self.skip_sec
             self.capture.set(cv2.CAP_PROP_POS_MSEC, target_msec)
             logger.debug("Set: target_msec=%f", target_msec)
-
-            ok, image = self.capture.read()
-            if not ok:
-                raise ReadImageError("Failed to read a image from capture")
+            image = self.get_image()
 
             is_death = self.match_template(image, death_image, self.threshold)
             if not is_death:
                 continue
             death_time = self.calculate_time(rewind_sec=self.record_sec)
-            if last_death_time is not None and death_time - last_death_time < Duration(seconds=10):
+            if last_death_time is not None and death_time - last_death_time < Duration(
+                seconds=10
+            ):
                 logger.debug("Skipped: death_time='%s'", death_time)
                 continue
             last_death_time = death_time

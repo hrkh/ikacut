@@ -31,12 +31,18 @@ class Match:
 
 class MatchesExtractor(IkaCaptureProcessor):
     def __init__(
-        self, filename: str, first_match_no: int, skip_sec: float, threshold: float
+        self,
+        filename: str,
+        first_match_no: int,
+        skip_sec: float,
+        threshold: float,
+        private_match: bool,
     ) -> None:
         super().__init__(filename)
         self.first_match_no = first_match_no
         self.skip_sec = skip_sec
         self.threshold = threshold
+        self.private_match = private_match
 
     def extract(self) -> typing.List[Match]:
         matches = []
@@ -44,8 +50,14 @@ class MatchesExtractor(IkaCaptureProcessor):
         is_in_match = False
         start_time, end_time = None, None
 
-        start_image = self.read_image("./images/start.png")
-        end_image = self.read_image("./images/end.png")
+        start_image = self.read_image("./images/gachi.png")
+        if self.private_match:
+            end_image = [
+                self.read_image("./images/win_purple.png"),
+                self.read_image("./images/win_yellow.png"),
+            ]
+        else:
+            end_image = self.read_image("./images/money.png")
 
         for i in range(int(self.total_time / self.skip_sec)):
             target_msec = i * 1000 * self.skip_sec
@@ -96,6 +108,7 @@ def add_command(group: click.Group) -> None:
     @click.option("-n", "--first-match-no", type=int, default=1)
     @click.option("-s", "--skip-sec", type=float, default=3.0)
     @click.option("-t", "--threshold", type=float, default=0.9)
+    @click.option("-p", "--private-match", is_flag=True, type=bool, default=False)
     @click.pass_context
     def command(
         ctx: click.Context,
@@ -103,8 +116,11 @@ def add_command(group: click.Group) -> None:
         first_match_no: int,
         skip_sec: float,
         threshold: float,
+        private_match: bool,
     ):
-        extractor = MatchesExtractor(filename, first_match_no, skip_sec, threshold)
+        extractor = MatchesExtractor(
+            filename, first_match_no, skip_sec, threshold, private_match
+        )
         matches = extractor.extract()
         for match in matches:
             print(

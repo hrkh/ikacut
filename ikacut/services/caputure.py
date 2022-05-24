@@ -1,8 +1,10 @@
 import logging
+import typing
 
 import cv2
 from pendulum.duration import Duration
 
+from ikacut.exceptions import ReadImageError
 
 logger = logging.getLogger(__file__)
 del logging
@@ -24,7 +26,7 @@ class IkaCaptureProcessor:
         logger.debug("Successfully read the image of starting match")
 
         return image
-    
+
     @staticmethod
     def format_duration(duration: Duration) -> str:
         elements = []
@@ -64,11 +66,31 @@ class IkaCaptureProcessor:
         return time
 
     def match_template(
-        self, target_image: cv2.Mat, template_image: cv2.Mat, threshold: float
+        self,
+        target_image: cv2.Mat,
+        template_images: typing.Union[cv2.Mat, typing.List[cv2.Mat]],
+        threshold: float,
     ) -> bool:
-        _, max_val, _, _ = cv2.minMaxLoc(
-            cv2.matchTemplate(target_image, template_image, cv2.TM_CCOEFF_NORMED)
-        )
-        logger.debug("max_val=%f", max_val)
+        if not isinstance(template_images, list):
+            template_images = [template_images]
+        for template_image in template_images:
+            _, max_val, _, _ = cv2.minMaxLoc(
+                cv2.matchTemplate(target_image, template_image, cv2.TM_CCOEFF_NORMED)
+            )
+            logger.debug("max_val=%f", max_val)
+            if max_val >= threshold:
+                return True
+        return False
 
-        return max_val >= threshold
+    def get_image(self) -> cv2.Mat:
+        ok, image = self.capture.read()
+        if not ok:
+            raise ReadImageError("Failed to read a image from capture")
+        return image
+
+    def snapshot(self, filename: str, target_sec: int, gray: bool = False) -> None:
+        self.capture.set(cv2.CAP_PROP_POS_MSEC, target_sec * 1000)
+        image = self.get_image()
+        if gray:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite(filename, image)
