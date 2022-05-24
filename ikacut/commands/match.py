@@ -21,12 +21,12 @@ class Match:
     end_time: typing.Optional[Duration]
 
     def format_start_time(self) -> str:
-        return self.format_duration(self.start_time)
+        return IkaCaptureProcessor.format_duration(self.start_time)
 
     def format_end_time(self) -> str:
         if self.end_time is None:
             return ""
-        return self.format_duration(self.end_time)
+        return IkaCaptureProcessor.format_duration(self.end_time)
 
 
 class MatchesExtractor(IkaCaptureProcessor):
@@ -74,7 +74,6 @@ class MatchesExtractor(IkaCaptureProcessor):
                 logger.info(
                     "Matched: match_no=%d, start_time='%s'", match_no, start_time
                 )
-
 
             if start_time is None or end_time is None:
                 continue
